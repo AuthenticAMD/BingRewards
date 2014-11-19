@@ -5,7 +5,8 @@
         betweenQueriesInterval="10.0"
         betweenQueriesSalt="5.0"
         betweenAccountsInterval="300"
-        betweenAccountsSalt="600" />
+        betweenAccountsSalt="600" 
+        displayAccountsBefore="2" />
 
     <!--
       - Note: login and password are optional
