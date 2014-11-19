@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #
 # Bing! queries generator
@@ -7,7 +7,7 @@
 
 import re
 import helpers
-import urllib2
+import urllib
 import bingFlyoutParser as bfp
 from bingRewards import BingRewards
 
@@ -141,9 +141,9 @@ class queryGenerator:
             raise ValueError("history is not set or not an instance of set")
         self.history = history
 
-        request = urllib2.Request(url = BING_NEWS_URL, headers = self.bingRewards.httpHeaders)
+        request = urllib.request.Request(url = BING_NEWS_URL, headers = self.bingRewards.httpHeaders)
         with self.bingRewards.opener.open(request) as response:
-            newsPage = helpers.getResponseBody(response)
+            newsPage = helpers.getResponseBody(response).decode('utf-8')
 
         if newsPage is None: raise TypeError("newsPage is None")
         if newsPage.strip() == "": raise ValueError("newsPage is empty")
