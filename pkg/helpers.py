@@ -4,7 +4,7 @@
 # developed by Sergey Markelov (2013)
 #
 
-import StringIO
+import io
 import zlib
 import gzip
 import os
@@ -42,7 +42,7 @@ def createResultsDir(f):
     resultsDir = scriptDir + "/" + RESULTS_DIR
     try:
         os.makedirs(resultsDir, 0o755)
-    except OSError, e:
+    except OSError as e:
         if e.errno != errno.EEXIST:
             raise
     RESULTS_DIR = resultsDir
@@ -52,19 +52,13 @@ def getResponseBody(response):
     """ Returns response.read(), but does gzip deflate if appropriate"""
 
     encoding = response.info().get("Content-Encoding")
-
+    
     if encoding in ("gzip", "x-gzip", "deflate"):
         page = response.read()
         if encoding == "deflate":
             return zlib.decompress(page)
         else:
-            fd = StringIO.StringIO(page)
-            try:
-                data = gzip.GzipFile(fileobj = fd)
-                try:     content = data.read()
-                finally: data.close()
-            finally:
-                fd.close()
+            content = gzip.decompress(page)
             return content
     else:
         return response.read()
