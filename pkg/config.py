@@ -51,6 +51,7 @@ class Config:
             self.betweenQueriesSalt      = 3.0    # default to this number of seconds
             self.betweenAccountsInterval = 30.0   # default to this number of seconds
             self.betweenAccountsSalt     = 35.5   # default to this number of seconds
+            self.displayAccountsBefore   = 2    # default to show account before and after
 
     class Proxy:
         """
@@ -294,7 +295,7 @@ class Config:
         try:
             retry.interval = float(val)
         except ValueError:
-            raise ConfigError("EVENTS.RETRY.interval must be (dobule): " + val)
+            raise ConfigError("EVENTS.RETRY.interval must be (double): " + val)
         if retry.interval < 0:
             raise ConfigError("EVENTS.RETRY.interval MUST BE >= 0")
 
@@ -385,6 +386,18 @@ class Config:
 
         return result
 
+    def __parseIntAttr(self, xmlNode, attr, default, attrName):
+        result = 0
+        val = xmlNode.get(attr, default)
+        try:
+            result = int(val)
+        except ValueError:
+            raise ConfigError(attrName + " must be (int): " + val)
+        if result < 0:
+            raise ConfigError(attrName + " MUST BE >= 0")
+
+        return result
+
     def __parseGeneral(self, xmlGeneralNode):
         """
         Parses Config.General section
@@ -395,7 +408,8 @@ class Config:
         g.betweenQueriesSalt      = self.__parseFloatAttr(xmlGeneralNode, "betweenQueriesSalt",      g.betweenQueriesSalt,      "general.betweenQueriesSalt")
         g.betweenAccountsInterval = self.__parseFloatAttr(xmlGeneralNode, "betweenAccountsInterval", g.betweenAccountsInterval, "general.betweenAccountsInterval")
         g.betweenAccountsSalt     = self.__parseFloatAttr(xmlGeneralNode, "betweenAccountsSalt",     g.betweenAccountsSalt,     "general.betweenAccountsSalt")
-
+        g.displayAccountsBefore   = self.__parseIntAttr(xmlGeneralNode, "displayAccountsBefore",   g.displayAccountsBefore,   "general.displayAccountsBefore")
+        
         self.general = g
 
     def __parseQueries(self, xmlQueriesNode):
