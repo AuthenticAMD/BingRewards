@@ -6,30 +6,29 @@
 
 from __future__ import with_statement
 
-import cookielib
+import http.cookiejar as cookielib
 import random
 import time
 import urllib
-import urllib2
 import importlib
-
 import bingCommon
 import bingFlyoutParser as bfp
 import bingHistory
 import helpers
+from pip._vendor.distlib.locators import Page
 
 # extend urllib.addinfourl like it defines @contextmanager (to use with "with" keyword)
-urllib.addinfourl.__enter__ = lambda self: self
-urllib.addinfourl.__exit__  = lambda self, type, value, traceback: self.close()
+urllib.request.addinfourl.__enter__ = lambda self: self
+urllib.request.addinfourl.__exit__  = lambda self, type, value, traceback: self.close()
 
-class HTTPRefererHandler(urllib2.HTTPRedirectHandler):
+class HTTPRefererHandler(urllib.request.HTTPRedirectHandler):
     def http_error_302(self, req, fp, code, msg, headers):
         if not "Referer" in req.headers:
 #             if req.get_host() == "www.bing.com":
 #                 req.headers["Referer"] = "http://www.bing.com/"
 #             else:
                 req.headers["Referer"] = req.get_full_url()
-        return urllib2.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
+        return urllib.request.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
 
     http_error_301 = http_error_303 = http_error_307 = http_error_302
 
@@ -69,23 +68,23 @@ class BingRewards:
             else:
                 proxyString = config.proxy.url
 
-            print "Protocols: '%s', Proxy: '%s'" % ( ", ".join(config.proxy.protocols), proxyString )
+            print ("Protocols: '%s', Proxy: '%s'" % ( ", ".join(config.proxy.protocols), proxyString ))
 
-            self.opener = urllib2.build_opener(
-                                            urllib2.ProxyHandler( { p : proxyString for p in config.proxy.protocols } ),
-                                            #urllib2.HTTPSHandler(debuglevel = 1),     # be verbose on HTTPS
-                                            #urllib2.HTTPHandler(debuglevel = 1),      # be verbose on HTTP
-                                            urllib2.HTTPSHandler(),
+            self.opener = urllib.request.build_opener(
+                                            urllib.request.ProxyHandler( { p : proxyString for p in config.proxy.protocols } ),
+                                            #urllib.request.HTTPSHandler(debuglevel = 1),     # be verbose on HTTPS
+                                            #urllib.request.HTTPHandler(debuglevel = 1),      # be verbose on HTTP
+                                            urllib.request.HTTPSHandler(),
                                             HTTPRefererHandler,                       # add Referer header on redirect
-                                            urllib2.HTTPCookieProcessor(cookies))     # keep cookies
+                                            urllib.request.HTTPCookieProcessor(cookies))     # keep cookies
 
         else:
-            self.opener = urllib2.build_opener(
-                                            #urllib2.HTTPSHandler(debuglevel = 1),     # be verbose on HTTPS
-                                            #urllib2.HTTPHandler(debuglevel = 1),      # be verbose on HTTP
-                                            urllib2.HTTPSHandler(),
+            self.opener = urllib.request.build_opener(
+                                            #urllib.request.HTTPSHandler(debuglevel = 1),     # be verbose on HTTPS
+                                            #urllib.request.HTTPHandler(debuglevel = 1),      # be verbose on HTTP
+                                            urllib.request.HTTPSHandler(),
                                             HTTPRefererHandler,                       # add Referer header on redirect
-                                            urllib2.HTTPCookieProcessor(cookies))     # keep cookies
+                                            urllib.request.HTTPCookieProcessor(cookies))     # keep cookies
 
     def requestFlyoutPage(self):
         """
@@ -94,13 +93,13 @@ class BingRewards:
         order to earn Bing points
         """
         url = self.BING_FLYOUT_PAGE
-        request = urllib2.Request(url = url, headers = self.httpHeaders)
+        request = urllib.request.Request(url = url, headers = self.httpHeaders)
 
 # commenting the line below, because on 10/25/2013 Bing! started to return an empty flyout page if referer is other than http://www.bing.com
         #request.add_header("Referer", "http://www.bing.com/rewards/dashboard")
 
         with self.opener.open(request) as response:
-            page = helpers.getResponseBody(response)
+            page = helpers.getResponseBody(response).decode('utf-8')
         return page
 
     def getLifetimeCredits(self):
@@ -109,10 +108,10 @@ class BingRewards:
         The number of credits earned since day one of the account
         """
         url = "http://www.bing.com/rewards/dashboard"
-        request = urllib2.Request(url = url, headers = self.httpHeaders)
+        request = urllib.request.Request(url = url, headers = self.httpHeaders)
         request.add_header("Referer", bingCommon.BING_URL)
         with self.opener.open(request) as response:
-            page = helpers.getResponseBody(response)
+            page = helpers.getResponseBody(response).decode('utf-8')
 
 # parse dashboard page
         s = page.find('<div class="credits-right')
@@ -146,16 +145,16 @@ class BingRewards:
         Returns rewards points as int
         """
 # report activity
-        postFields = urllib.urlencode( { "url" : bingCommon.BING_URL, "V" : "web" } )
+        postFields = urllib.parse.urlencode( { "url" : bingCommon.BING_URL, "V" : "web" } )
         url = "http://www.bing.com/rewardsapp/reportActivity"
-        request = urllib2.Request(url, postFields, self.httpHeaders)
+        request = urllib.request.Request(url, postFields.encode('utf-8'), self.httpHeaders)
         request.add_header("Referer", bingCommon.BING_URL)
         with self.opener.open(request) as response:
-            page = helpers.getResponseBody(response)
+            page = helpers.getResponseBody(response).decode('utf-8')
 
         if len(page) == 0:
             raise Exception("Rewards points page is empty. That could mean you are not signed up for rewards with this account")
-
+    
 # parse activity page
         s = page.index("t.innerHTML='")
         s += len("t.innerHTML='")
@@ -166,9 +165,9 @@ class BingRewards:
         """Processes bfp.Reward.Type.Action.HIT and returns self.RewardResult"""
         res = self.RewardResult(reward)
         pointsEarned = self.getRewardsPoints()
-        request = urllib2.Request(url = reward.url, headers = self.httpHeaders)
+        request = urllib.request.Request(url = reward.url, headers = self.httpHeaders)
         with self.opener.open(request) as response:
-            page = helpers.getResponseBody(response)
+            page = helpers.getResponseBody(response).decode('utf-8')
         pointsEarned = self.getRewardsPoints() - pointsEarned
 # if HIT is against bfp.Reward.Type.RE_EARN_CREDITS - check if pointsEarned is the same to
 # pointsExpected
@@ -199,9 +198,9 @@ class BingRewards:
 
 # get a set of queries from today's Bing! history
         url = bingHistory.getBingHistoryTodayURL()
-        request = urllib2.Request(url = url, headers = self.httpHeaders)
+        request = urllib.request.Request(url = url, headers = self.httpHeaders)
         with self.opener.open(request) as response:
-            page = helpers.getResponseBody(response)
+            page = helpers.getResponseBody(response).decode('utf-8')
         history = bingHistory.parse(page)
 
 # find out how many searches need to be performed
@@ -219,12 +218,12 @@ class BingRewards:
         if reward.tp == bfp.Reward.Type.SEARCH_PC:
             headers["User-Agent"] = self.userAgents.pc
             print
-            print "Running PC searches"
+            print ("Running PC searches")
             print
         elif reward.tp == bfp.Reward.Type.SEARCH_MOBILE:
             headers["User-Agent"] = self.userAgents.mobile
             print
-            print "Running mobile searches"
+            print ("Running mobile searches")
             print
         else:
             res.isError = True
@@ -241,9 +240,9 @@ class BingRewards:
         queries = queryGenerator.generateQueries(searchesCount, history)
 
         if len(queries) < searchesCount:
-            print "Warning: not enough queries to run were generated!"
-            print "Requested:", searchesCount
-            print "Generated:", len(queries)
+            print ("Warning: not enough queries to run were generated!")
+            print ("Requested:", searchesCount)
+            print ("Generated:", len(queries))
 
         successfullQueries = 0
         i = 1
@@ -257,11 +256,11 @@ class BingRewards:
 
             url = BING_QUERY_URL + urllib.quote_plus(query.encode('utf-8'))
 
-            print "%s - %2d/%2d - Requesting: %s" % (helpers.getLoggingTime(), i, totalQueries, url)
+            print ("%s - %2d/%2d - Requesting: %s" % (helpers.getLoggingTime(), i, totalQueries, url))
 
-            request = urllib2.Request(url = url, headers = bingCommon.HEADERS)
+            request = urllib.request.Request(url = url, headers = bingCommon.HEADERS)
             with self.opener.open(request) as response:
-                page = helpers.getResponseBody(response)
+                page = helpers.getResponseBody(response).decode('utf-8')
 
 # check for the successfull marker
             found = page.find(BING_QUERY_SUCCESSFULL_RESULT_MARKER_PC) != -1 \
@@ -269,9 +268,9 @@ class BingRewards:
 
             if not found:
                 filename = helpers.dumpErrorPage(page)
-                print "Warning! Query:"
-                print "\t" + query
-                print "returned no results, check " + filename + " file for more information"
+                print ("Warning! Query:")
+                print ("\t" + query)
+                print ("returned no results, check " + filename + " file for more information")
 
             else:
                 successfullQueries += 1
@@ -318,16 +317,16 @@ class BingRewards:
 
     def __printReward(self, reward):
         """Prints a reward"""
-        print "name        : %s" % reward.name
+        print ("name        : %s" % reward.name)
         if reward.url != "":
-            print "url         : %s" % reward.url
+            print ("url         : %s" % reward.url)
         if reward.progressMax != 0:
-            print "progressCur : %d" % reward.progressCurrent
-            print "progressMax : %d" % reward.progressMax
-            print "progress %%  : %0.2f%%" % reward.progressPercentage()
+            print ("progressCur : %d" % reward.progressCurrent)
+            print ("progressMax : %d" % reward.progressMax)
+            print ("progress %%  : %0.2f%%" % reward.progressPercentage())
         if reward.isDone:
-            print "is done     : true"
-        print "description : %s" % reward.description
+            print ("is done     : true")
+        print ("description : %s" % reward.description)
 
     def printRewards(self, rewards):
         """
@@ -341,8 +340,8 @@ class BingRewards:
         total = len(rewards)
         for r in rewards:
             i += 1
-            print "Reward %d/%d:" % (i, total)
-            print "-----------"
+            print ("Reward %d/%d:" % (i, total))
+            print ("-----------")
             self.__printReward(r)
             print
 
@@ -350,9 +349,9 @@ class BingRewards:
         """Prints a result"""
         self.__printReward(result.o)
         if result.isError:
-            print "   Error    :   true"
-        print "   Message  : " + result.message
-        print "   Action   : " + bfp.Reward.Type.Action.toStr(result.action)
+            print ("   Error    :   true")
+        print ("   Message  : " + result.message)
+        print ("   Action   : " + bfp.Reward.Type.Action.toStr(result.action))
 
 
     def printResults(self, results, verbose):
@@ -369,7 +368,7 @@ class BingRewards:
         for r in results:
             if verbose or r.isError:
                 i += 1
-                print "Result %d/%d:" % (i, total)
-                print "-----------"
+                print ("Result %d/%d:" % (i, total))
+                print ("-----------")
                 self.__printResult(r)
                 print
