@@ -15,7 +15,8 @@ Usage:
     parseFlyoutPage(bingRewards.requestFlyoutPage(), BING_URL)
 """
 
-import HTMLParser
+#import HTMLParser
+import html.parser as HTMLParser
 import re
 
 class Reward:
