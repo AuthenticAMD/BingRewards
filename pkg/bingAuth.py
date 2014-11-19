@@ -2,14 +2,13 @@
 # developed by Sergey Markelov (2013)
 #
 
-import HTMLParser
+import html.parser as HTMLParser
 import random
 import urllib
-import urllib2
 import re
-
 import bingCommon
 import helpers
+from pip._vendor.distlib.locators import Page
 
 class AuthenticationError(Exception):
     def __init__(self, message):
@@ -34,10 +33,10 @@ class HTMLFormInputsParser(HTMLParser.HTMLParser):
 class BingAuth:
     def __init__(self, httpHeaders, opener):
         """
-        @param opener is an instance of urllib2.OpenerDirector
+        @param opener is an instance of urllib.request.OpenerDirector
         """
-        if opener is None or not isinstance(opener, urllib2.OpenerDirector):
-            raise TypeError("opener is not an instance of urllib2.OpenerDirector")
+        if opener is None or not isinstance(opener, urllib.request.OpenerDirector):
+            raise TypeError("opener is not an instance of urllib.request.OpenerDirector")
 
         self.opener = opener
         self.httpHeaders = httpHeaders
@@ -52,7 +51,8 @@ class BingAuth:
 
         for encoding, marker in t:
             if marker.search(s):
-                return s.decode(encoding)
+                return s.encode('ascii').decode(encoding)
+                
 
         raise AuthenticationError( "s = '%s' can not be decoded with these encodings: [ %s ]" % ( s, ", ".join( ( e for e, m in t ) ) ) )
 
@@ -62,14 +62,14 @@ class BingAuth:
 
         throws AuthenticationError if authentication can not be passed
         throws HTMLParser.HTMLParseError
-        throws urllib2.HTTPError if the server couldn't fulfill the request
-        throws urllib2.URLError if failed to reach the server
+        throws urllib.request.HTTPError if the server couldn't fulfill the request
+        throws urllib.request.URLError if failed to reach the server
         """
         BING_REQUEST_PERMISSIONS = "http://www.bing.com/fd/auth/signin?action=interactive&provider=facebook&return_url=http%3a%2f%2fwww.bing.com%2f&src=EXPLICIT&perms=read_stream%2cuser_photos%2cfriends_photos&sig="
 #        print "Requesting bing.com"
 
 # request http://www.bing.com
-        request = urllib2.Request(url = bingCommon.BING_URL, headers = self.httpHeaders)
+        request = urllib.request.Request(url = bingCommon.BING_URL, headers = self.httpHeaders)
         with self.opener.open(request) as response:
             page = helpers.getResponseBody(response)
 
@@ -90,7 +90,7 @@ class BingAuth:
 #        print "Now requesting facebook authentication page"
 
 # request FACEBOOK_CONNECT_ORIGINAL_URL
-        request = urllib2.Request(url = url, headers = self.httpHeaders)
+        request = urllib.request.Request(url = url, headers = self.httpHeaders)
         request.add_header("Referer", bingCommon.BING_URL)
         with self.opener.open(request) as response:
             referer = response.geturl()
@@ -122,7 +122,7 @@ class BingAuth:
 
 # pass facebook authentication
         postFields = urllib.urlencode(parser.inputs)
-        request = urllib2.Request(url, postFields, self.httpHeaders)
+        request = urllib.request.Request(url, postFields, self.httpHeaders)
         request.add_header("Referer", referer)
         with self.opener.open(request) as response:
             url = response.geturl()
@@ -141,30 +141,31 @@ class BingAuth:
         Authenticates a user on bing.com with his/her Live account.
 
         throws AuthenticationError if authentication can not be passed
-        throws urllib2.HTTPError if the server couldn't fulfill the request
-        throws urllib2.URLError if failed to reach the server
+        throws urllib.request.HTTPError if the server couldn't fulfill the request
+        throws urllib.request.URLError if failed to reach the server
         """
 #        print "Requesting bing.com"
 
 # request http://www.bing.com
-        request = urllib2.Request(url = bingCommon.BING_URL, headers = self.httpHeaders)
+        request = urllib.request.Request(url = bingCommon.BING_URL, headers = self.httpHeaders)
         with self.opener.open(request) as response:
-            page = helpers.getResponseBody(response)
-
+            #page = helpers.getResponseBody(response)
+            page = helpers.getResponseBody(response).decode('utf-8')
+    
 # get connection URL for provider Live
         s = page.index('"WindowsLiveId":"')
         s += len('"WindowsLiveId":"')
         e = page.index('"', s)
-
+        
         url = BingAuth._escapeString(page[s:e])
 
-        request = urllib2.Request(url = url, headers = self.httpHeaders)
+        request = urllib.request.Request(url = url, headers = self.httpHeaders)
         request.add_header("Referer", bingCommon.BING_URL)
         with self.opener.open(request) as response:
             referer = response.geturl()
 # get Facebook authenctication form action url
-            page = helpers.getResponseBody(response)
-
+            page = helpers.getResponseBody(response).decode('utf-8')  
+        
 # get PPFT parameter
         s = page.index("sFTTag")
         s = page.index('value="', s)
@@ -205,7 +206,7 @@ class BingAuth:
         e = page.index("'", s)
         url = page[s:e]
 
-        postFields = urllib.urlencode({
+        postFields = urllib.parse.urlencode({
             "login"         : login,
             "passwd"        : password,
             "SI"            : "Sign in",
@@ -228,33 +229,33 @@ class BingAuth:
             "i17"           : "0",                  # SRSFailed
             "i18"           : "__Login_Strings|1,__Login_Core|1," # SRSSuccess
         })
-
+        
         # get Passport page
-
-        request = urllib2.Request(url, postFields, self.httpHeaders)
-        with self.opener.open(request) as response:
-            page = helpers.getResponseBody(response)
+        request = urllib.request.Request(url, postFields.encode('utf-8'), self.httpHeaders)
+        with self.opener.open(request) as response:  #Note, at this point you need a valid login to test!
+            page = helpers.getResponseBody(response).decode('utf-8')
 
         s = page.index("<form ")
         e = page.index("</form>", s)
         e += len("</form>")
 
         parser = HTMLFormInputsParser()
-        parser.feed(page[s:e].decode("utf-8"))
+        #parser.feed(page[s:e].decode("utf-8"))
+        parser.feed(page[s:e])
         parser.close()
-        postFields = urllib.urlencode(parser.inputs)
+        postFields = urllib.parse.urlencode(parser.inputs)
 
         # finish passing authentication
 
         url = "http://www.bing.com/Passport.aspx?requrl=http%3a%2f%2fwww.bing.com%2f&wa=wsignin1.0"
-        request = urllib2.Request(url, postFields, self.httpHeaders)
+        request = urllib.request.Request(url, postFields.encode('utf-8'), self.httpHeaders)
         request.add_header("Origin", "https://login.live.com")
 
         with self.opener.open(request) as response:
             page = helpers.getResponseBody(response)
 
         url = bingCommon.BING_URL
-        request = urllib2.Request(url, postFields, self.httpHeaders)
+        request = urllib.request.Request(url, postFields.encode('utf-8'), self.httpHeaders)
         request.add_header("Referer", "http://www.bing.com/Passport.aspx?requrl=http%3a%2f%2fwww.bing.com%2f&wa=wsignin1.0")
         with self.opener.open(request) as response:
             url = response.geturl()
