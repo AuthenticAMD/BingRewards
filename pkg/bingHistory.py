@@ -1,11 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #
 # developed by Sergey Markelov (2013)
 #
 
 from datetime import datetime
-from HTMLParser import HTMLParser
+import html.parser as HTMLParser
 import helpers
 
 def __parseResultsArea1(resultsArea):
@@ -80,9 +80,9 @@ def parse(page):
     """
     if page is None: raise TypeError("page is None")
     if page.strip() == "":
-        print "-------------------------------"
-        print "Warning: Bing! history is empty"
-        print "-------------------------------"
+        print ("-------------------------------")
+        print ("Warning: Bing! history is empty")
+        print ("-------------------------------")
         print
         return set()
 
