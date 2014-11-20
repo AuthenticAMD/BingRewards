@@ -5,7 +5,7 @@
 #
 
 from datetime import datetime
-import html.parser as HTMLParser
+from html.parser import HTMLParser
 import helpers
 
 def __parseResultsArea1(resultsArea):
