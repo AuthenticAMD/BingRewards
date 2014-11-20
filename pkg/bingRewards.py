@@ -15,7 +15,7 @@ import bingCommon
 import bingFlyoutParser as bfp
 import bingHistory
 import helpers
-from pip._vendor.distlib.locators import Page
+#from pip._vendor.distlib.locators import Page
 
 # extend urllib.addinfourl like it defines @contextmanager (to use with "with" keyword)
 urllib.request.addinfourl.__enter__ = lambda self: self
@@ -208,7 +208,7 @@ class BingRewards:
         rewardsCount    = int(matches.group(1))
         rewardCost      = int(matches.group(2))
         maxRewardsCount = int(matches.group(4))
-        searchesCount = maxRewardsCount * rewardCost / rewardsCount
+        searchesCount = int(maxRewardsCount * rewardCost / rewardsCount)
 
 # adjust to the current progress
         searchesCount -= reward.progressCurrent * rewardCost
@@ -254,7 +254,7 @@ class BingRewards:
                 t = self.betweenQueriesInterval + random.uniform(0, self.betweenQueriesSalt)
                 time.sleep(t)
 
-            url = BING_QUERY_URL + urllib.quote_plus(query.encode('utf-8'))
+            url = BING_QUERY_URL + urllib.parse.quote_plus(query.encode('utf-8'))
 
             print ("%s - %2d/%2d - Requesting: %s" % (helpers.getLoggingTime(), i, totalQueries, url))
 
