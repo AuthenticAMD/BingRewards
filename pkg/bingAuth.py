@@ -121,7 +121,7 @@ class BingAuth:
 #        print "Now passing facebook authentication"
 
 # pass facebook authentication
-        postFields = urllib.urlencode(parser.inputs)
+        postFields = urllib.parse.urlencode(parser.inputs)
         request = urllib.request.Request(url, postFields, self.httpHeaders)
         request.add_header("Referer", referer)
         with self.opener.open(request) as response:
