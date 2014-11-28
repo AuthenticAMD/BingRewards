@@ -8,7 +8,6 @@ import urllib
 import re
 import bingCommon
 import helpers
-from pip._vendor.distlib.locators import Page
 
 class AuthenticationError(Exception):
     def __init__(self, message):
