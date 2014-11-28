@@ -7,7 +7,7 @@
 
 import re
 import helpers
-import urllib2
+import urllib3
 from random import randint
 from datetime import date
 from bingRewards import BingRewards
@@ -40,7 +40,7 @@ class queryGenerator:
         if history is None or not isinstance(history, set):
             raise ValueError("history is not set or not an instance of set")
 
-        request = urllib2.Request(url = QUERY_URL, headers = self.bingRewards.httpHeaders)
+        request = urllib.request.Request(url = QUERY_URL, headers = self.bingRewards.httpHeaders)
         with self.bingRewards.opener.open(request) as response:
             page = helpers.getResponseBody(response)
 
