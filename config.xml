@@ -5,8 +5,7 @@
         betweenQueriesInterval="10.0"
         betweenQueriesSalt="5.0"
         betweenAccountsInterval="300"
-        betweenAccountsSalt="600" 
-        displayAccountsBefore="2" />
+        betweenAccountsSalt="600" />
 
     <!--
       - Note: login and password are optional
@@ -84,6 +83,8 @@
       -     googleTrends - uses today's google trends, and google suggested searches. This generatoer
       -	                   generates whole words, generally consistent with a search syntax.  These terms
       -                    are anything trending and can be NSFW or terms for illegal items.
+      -     dictionary - uses /usr/share/dict/linux.words as source for words.  File doesn't exist in Windows.
+                         If file doesn't exist, you'll need to install a dictionary using your packagae manager.
     -->
     <queries generator="wikipedia" />
 </configuration>
