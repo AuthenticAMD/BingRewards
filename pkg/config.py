@@ -51,7 +51,7 @@ class Config:
             self.betweenQueriesSalt      = 3.0    # default to this number of seconds
             self.betweenAccountsInterval = 30.0   # default to this number of seconds
             self.betweenAccountsSalt     = 35.5   # default to this number of seconds
-            self.displayAccountsBefore   = 2    # default to show account before and after
+            #self.displayAccountsBefore   = 2    # default to show account before and after
 
     class Proxy:
         """
