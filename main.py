@@ -55,9 +55,6 @@ def earnRewards(config, httpHeaders, userAgents, reportItem, password):
 
         if verbose:
             bingRewards.printRewards(rewards)
-            
-        if config.general.displayAccountsBefore == 1 | 2:
-            print ("%s - %s" % (reportItem.accountType, reportItem.accountLogin))
         results = bingRewards.process(rewards)
         
         if verbose:
@@ -72,8 +69,7 @@ def earnRewards(config, httpHeaders, userAgents, reportItem, password):
         reportItem.pointsEarned = reportItem.newPoints - reportItem.oldPoints
         reportItem.pointsEarnedRetrying += reportItem.pointsEarned
         print
-        if config.general.displayAccountsBefore == 0 | 2:
-            print ("%s - %s" % (reportItem.accountType, reportItem.accountLogin))
+        print ("%s - %s" % (reportItem.accountType, reportItem.accountLogin))
         print
         print ("Points before:    %6d" % reportItem.oldPoints)
         print ("Points after:     %6d" % reportItem.newPoints)
