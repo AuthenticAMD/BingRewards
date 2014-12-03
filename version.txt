@@ -1,5 +1,9 @@
 Current version 3.8
 
+3.8.3   *) @AuthenticAMD, Added dictionary Query Generator Module
+           Generates queries from /usr/share/dict/linux.words
+           Converted code to be Python 3 compatible
+
 3.8.2   *) @ktp420, Fixed https://github.com/sealemar/BingRewards/issues/86
            Fixed https://github.com/sealemar/BingRewards/issues/84
            Fixed PPSX parameter in bingAuth.py
